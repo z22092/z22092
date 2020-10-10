@@ -1,5 +1,7 @@
 ### Hi there 👋
 
+- 🔭 I’m enthusiastic programmer, integrations Specialist and professional bug finder
+
 <!--
 **z22092/z22092** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 
