@@ -1,18 +1,16 @@
-### Hi there 👋
+<p>
+  <img src="assets/banner.svg" alt="Jefferson. Software engineer, AI-assisted engineering." width="100%">
+</p>
 
-- 🔭 I’m enthusiastic programmer, integrations Specialist and professional bug finder
+Hi, I'm Jefferson, a software engineer at a large crypto exchange and payment institution in Latin America. I build the backend of its financial products, mostly distributed systems in Python.
 
-<!--
-**z22092/z22092** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+I also drive AI-assisted engineering there. I built our internal harness for Claude Code, with agents for code review, incident investigation and architecture docs, and onboarded every engineering team onto it.
 
-Here are some ideas to get you started:
+In open source, I maintain [taskiq-postgresql](https://github.com/z22092/taskiq-postgresql).
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+Python · FastAPI · async SQLAlchemy · PostgreSQL · RabbitMQ · Redis · Kubernetes<br>
+Won our first internal hackathon (2025) and an internal AI award (2026).
+
+<a href="https://github.com/z22092/taskiq-postgresql"><img src="assets/taskiq-postgresql.svg" alt="taskiq-postgresql: broker, result backend and schedule source for taskiq, all in one PostgreSQL database." width="560"></a>
+
+<samp>$ <a href="https://www.linkedin.com/in/jeffvenceslau">linkedin</a> · <a href="https://pypi.org/project/taskiq-postgresql/">pypi</a></samp>
