@@ -56,7 +56,7 @@ def load_font(kind: str) -> bytes:
 
 def subset_woff2(font: bytes, text: str) -> bytes:
     """Subset a font to the characters in `text` and return it as WOFF2."""
-    source = TTFont(io.BytesIO(font))
+    source = TTFont(io.BytesIO(font), recalcTimestamp=False)
     cmap = source.getBestCmap()
     missing = sorted({c for c in text if ord(c) not in cmap})
     if missing:
