@@ -7,9 +7,14 @@
 import base64
 import hashlib
 import html
+import argparse
 import io
+import json
+import os
+import sys
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 from fontTools import subset
 from fontTools.ttLib import TTFont
@@ -188,3 +193,67 @@ def render_card(stars: int, version: str, display: bytes, mono: bytes) -> str:
 <text x="24" y="114" {MONO_FAMILY} font-size="11" letter-spacing="1.5" fill="{p['dim']}">PY {sep}  <tspan {DISPLAY_FAMILY}>{CARD_STAR}</tspan> {count}  {sep}  {ver}  {sep}  PYPI</text>
 </svg>
 """
+
+
+REPO_STARS_URL = "https://api.github.com/repos/z22092/taskiq-postgresql"
+PYPI_URL = "https://pypi.org/pypi/taskiq-postgresql/json"
+DEFAULT_OUT = Path(__file__).resolve().parent.parent / "assets"
+
+
+def _get_json(url: str, headers: dict[str, str]) -> dict:
+    """GET a URL and decode its JSON body; any failure becomes a BuildError."""
+    request = urllib.request.Request(url, headers={"User-Agent": "z22092-profile-builder", **headers})
+    try:
+        with urllib.request.urlopen(request, timeout=20) as resp:
+            data = json.loads(resp.read())
+    except (urllib.error.URLError, OSError, ValueError) as exc:
+        raise BuildError(f"could not fetch {url}: {exc}") from exc
+    if not isinstance(data, dict):
+        raise BuildError(f"unexpected JSON from {url}: expected an object")
+    return data
+
+
+def fetch_stars(token: str | None) -> int:
+    headers = {"Accept": "application/vnd.github+json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    stars = _get_json(REPO_STARS_URL, headers).get("stargazers_count")
+    if not isinstance(stars, int) or isinstance(stars, bool):
+        raise BuildError(f"no integer stargazers_count in response from {REPO_STARS_URL}")
+    return stars
+
+
+def fetch_version() -> str:
+    info = _get_json(PYPI_URL, {})
+    version = info.get("info", {}).get("version") if isinstance(info.get("info"), dict) else None
+    if not isinstance(version, str) or not version:
+        raise BuildError(f"no info.version in response from {PYPI_URL}")
+    return version
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Build the profile README SVG assets.")
+    parser.add_argument("--stars", type=int, help="star count (default: fetched from GitHub)")
+    parser.add_argument("--version", help="package version (default: fetched from PyPI)")
+    parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="output directory")
+    args = parser.parse_args(argv)
+    try:
+        stars = args.stars if args.stars is not None else fetch_stars(os.environ.get("GITHUB_TOKEN"))
+        version = args.version if args.version is not None else fetch_version()
+        display = load_font("display")
+        mono = load_font("mono")
+        files = {
+            "banner.svg": render_banner(display, mono),
+            "taskiq-postgresql.svg": render_card(stars, version, display, mono),
+        }
+    except BuildError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    args.out.mkdir(parents=True, exist_ok=True)
+    for name, content in files.items():
+        (args.out / name).write_bytes(content.encode("utf-8"))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
