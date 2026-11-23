@@ -80,3 +80,70 @@ def format_stars(n: int) -> str:
     if n < 1000:
         return str(n)
     return f"{n / 1000:.1f}".removesuffix(".0") + "k"
+
+
+DISPLAY_FAMILY = 'font-family="zDisplay, sans-serif"'
+MONO_FAMILY = 'font-family="zMono, monospace"'
+
+BANNER_TITLE = "Jefferson. Software engineer, AI-assisted engineering."
+BANNER_NAME = "JEFFERSON"
+BANNER_ID = ("ID//", "Z22092")
+BANNER_SECTOR = ("SECTOR//", "LATAM.FIN")
+BANNER_STATUS = ("STATUS//", "ONLINE")
+BANNER_ROLE = ("SOFTWARE ENGINEER ", "/", " AI-ASSISTED ENGINEERING")
+
+HAZARD_BOX = (600, 176, 190, 18)
+HAZARD_PERIOD = 16
+HAZARD_STRIPE = 8
+
+
+def _hazard_stripes() -> str:
+    """Slanted 45-degree stripes; one extra period on the left so a 16px drift loops."""
+    x0, y0, w, h = HAZARD_BOX
+    shapes = []
+    for x in range(x0 - h - HAZARD_PERIOD, x0 + w + 1, HAZARD_PERIOD):
+        pts = [(x + h, y0), (x + h + HAZARD_STRIPE, y0), (x + HAZARD_STRIPE, y0 + h), (x, y0 + h)]
+        shapes.append('<path d="M' + " L".join(f"{px} {py}" for px, py in pts) + ' Z"/>')
+    return "".join(shapes)
+
+
+def render_banner(display: bytes, mono: bytes) -> str:
+    """Return the complete HUD banner as a self-contained SVG document."""
+    p = PALETTE
+    display_text = BANNER_NAME
+    mono_text = "".join(BANNER_ID + BANNER_SECTOR + BANNER_STATUS + BANNER_ROLE)
+    style = (
+        font_face("zDisplay", subset_woff2(display, display_text))
+        + font_face("zMono", subset_woff2(mono, mono_text))
+        + "@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}"
+        + "@keyframes drift{from{transform:translateX(0)}to{transform:translateX(16px)}}"
+        + ".online{animation:pulse 2s ease-in-out infinite}"
+        + ".hazard{animation:drift 2s linear infinite}"
+        + "@media (prefers-reduced-motion: reduce){.online,.hazard{animation:none}}"
+    )
+    hx, hy, hw, hh = HAZARD_BOX
+    bars = "".join(
+        f'<rect x="{640 + i * 5}" y="60" width="{1 + (i * 7) % 3}" height="70"/>' for i in range(28)
+    )
+    role_a, role_sep, role_b = BANNER_ROLE
+    return f"""<svg viewBox="0 0 820 220" width="100%" xmlns="http://www.w3.org/2000/svg">
+<title>{BANNER_TITLE}</title>
+<style>{style}</style>
+<defs>
+ <linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="{p['main']}"/><stop offset="1" stop-color="{p['main2']}"/></linearGradient>
+ <clipPath id="hz"><rect x="{hx}" y="{hy}" width="{hw}" height="{hh}"/></clipPath>
+</defs>
+<path d="M0 0 H790 L820 30 V220 H30 L0 190 Z" fill="{p['bg']}" stroke="{p['line']}"/>
+<g {MONO_FAMILY} font-size="10.5" letter-spacing="2" fill="{p['dim']}">
+ <text x="34" y="30">{BANNER_ID[0]}<tspan fill="{p['alt']}">{BANNER_ID[1]}</tspan></text>
+ <text x="170" y="30">{BANNER_SECTOR[0]}<tspan fill="{p['alt']}">{BANNER_SECTOR[1]}</tspan></text>
+ <text x="360" y="30">{BANNER_STATUS[0]}<tspan class="online" fill="{p['main']}">{BANNER_STATUS[1]}</tspan></text>
+</g>
+<text x="30" y="122" {DISPLAY_FAMILY} font-weight="900" font-size="92" letter-spacing="-2" fill="url(#g)">{BANNER_NAME}</text>
+<rect x="34" y="140" width="6" height="18" fill="{p['alt']}"/>
+<text x="50" y="155" {MONO_FAMILY} font-size="14" letter-spacing="2" fill="{p['text']}">{role_a}<tspan fill="{p['dim']}">{role_sep}</tspan>{role_b}</text>
+<g clip-path="url(#hz)"><g class="hazard" fill="{p['alt']}">{_hazard_stripes()}</g></g>
+<g fill="{p['main2']}" opacity=".7">{bars}</g>
+<g stroke="{p['alt']}" stroke-width="2" fill="none"><path d="M14 172 V206 H48"/><path d="M806 48 V14 H772"/></g>
+</svg>
+"""
