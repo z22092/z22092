@@ -6,6 +6,7 @@
 
 import base64
 import hashlib
+import html
 import io
 import urllib.error
 import urllib.request
@@ -107,14 +108,20 @@ def _hazard_stripes() -> str:
     return "".join(shapes)
 
 
+def _font_css(display: bytes, display_text: str, mono: bytes, mono_text: str) -> str:
+    """The two embedded @font-face rules, each subset to the text it renders."""
+    return font_face("zDisplay", subset_woff2(display, display_text)) + font_face(
+        "zMono", subset_woff2(mono, mono_text)
+    )
+
+
 def render_banner(display: bytes, mono: bytes) -> str:
     """Return the complete HUD banner as a self-contained SVG document."""
     p = PALETTE
     display_text = BANNER_NAME
     mono_text = "".join(BANNER_ID + BANNER_SECTOR + BANNER_STATUS + BANNER_ROLE)
     style = (
-        font_face("zDisplay", subset_woff2(display, display_text))
-        + font_face("zMono", subset_woff2(mono, mono_text))
+        _font_css(display, display_text, mono, mono_text)
         + "@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}"
         + "@keyframes drift{from{transform:translateX(0)}to{transform:translateX(16px)}}"
         + ".online{animation:pulse 2s ease-in-out infinite}"
@@ -145,5 +152,39 @@ def render_banner(display: bytes, mono: bytes) -> str:
 <g clip-path="url(#hz)"><g class="hazard" fill="{p['alt']}">{_hazard_stripes()}</g></g>
 <g fill="{p['main2']}" opacity=".7">{bars}</g>
 <g stroke="{p['alt']}" stroke-width="2" fill="none"><path d="M14 172 V206 H48"/><path d="M806 48 V14 H772"/></g>
+</svg>
+"""
+
+
+CARD_TITLE = "taskiq-postgresql: broker, result backend and schedule source for taskiq, all in one PostgreSQL database."
+CARD_KICKER = ("MODULE//", "OSS.01")
+CARD_NAME = "TASKIQ-POSTGRESQL"
+CARD_LINES = ("Broker, result backend and schedule source for taskiq,", "all in one PostgreSQL database.")
+CARD_STAR = "\u2605"
+CARD_SEP = "\u25a0"
+CARD_DIGITS = "0123456789.k"
+
+
+def render_card(stars: int, version: str, display: bytes, mono: bytes) -> str:
+    """Return the taskiq-postgresql card as a self-contained SVG document."""
+    p = PALETTE
+    count = format_stars(stars)
+    ver = html.escape("V" + version.upper())
+    display_text = CARD_NAME + CARD_STAR
+    mono_text = "".join(CARD_KICKER + CARD_LINES) + "PY " + CARD_SEP + " " + ver + " PYPI" + CARD_DIGITS + count
+    style = _font_css(display, display_text, mono, mono_text)
+    sep = f'<tspan fill="{p["alt"]}">{CARD_SEP}</tspan>'
+    # white-space:pre on the root keeps the double spaces around the separators.
+    return f"""<svg viewBox="0 0 560 124" width="560" xmlns="http://www.w3.org/2000/svg" style="white-space:pre">
+<title>{CARD_TITLE}</title>
+<style>{style}</style>
+<defs><linearGradient id="c" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="{p['main']}"/><stop offset="1" stop-color="{p['main2']}"/></linearGradient></defs>
+<path d="M0 0 H540 L560 20 V124 H20 L0 104 Z" fill="{p['bg']}" stroke="{p['line']}"/>
+<rect x="0" y="0" width="5" height="124" fill="{p['main']}"/>
+<text x="24" y="26" {MONO_FAMILY} font-size="10" letter-spacing="2" fill="{p['dim']}">{CARD_KICKER[0]}<tspan fill="{p['alt']}">{CARD_KICKER[1]}</tspan></text>
+<text x="24" y="54" {DISPLAY_FAMILY} font-weight="900" font-size="24" fill="url(#c)">{CARD_NAME}</text>
+<text x="24" y="78" {MONO_FAMILY} font-size="12" fill="{p['text']}">{CARD_LINES[0]}</text>
+<text x="24" y="94" {MONO_FAMILY} font-size="12" fill="{p['text']}">{CARD_LINES[1]}</text>
+<text x="24" y="114" {MONO_FAMILY} font-size="11" letter-spacing="1.5" fill="{p['dim']}">PY {sep}  <tspan {DISPLAY_FAMILY}>{CARD_STAR}</tspan> {count}  {sep}  {ver}  {sep}  PYPI</text>
 </svg>
 """
