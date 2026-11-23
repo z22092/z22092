@@ -1,6 +1,8 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = ["fonttools==4.68.0", "brotli==1.2.1"]
+# [tool.uv]
+# exclude-newer = "2026-11-23T00:00:00Z"
 # ///
 """Build the self-contained SVG assets for the GitHub profile README."""
 
