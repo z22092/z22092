@@ -10,6 +10,7 @@ import html
 import argparse
 import io
 import json
+import math
 import os
 import sys
 import urllib.error
@@ -99,17 +100,20 @@ BANNER_STATUS = ("STATUS//", "ONLINE")
 BANNER_ROLE = ("SOFTWARE ENGINEER ", "/", " AI-ASSISTED ENGINEERING")
 
 HAZARD_BOX = (600, 176, 190, 18)
-HAZARD_PERIOD = 16
-HAZARD_STRIPE = 8
+# The mockup used a 16-unit pattern rotated 45 degrees: horizontal period 16*sqrt(2).
+HAZARD_PERIOD = round(16 * math.sqrt(2), 2)
+HAZARD_STRIPE = round(8 * math.sqrt(2), 2)
 
 
 def _hazard_stripes() -> str:
-    """Slanted 45-degree stripes; one extra period on the left so a 16px drift loops."""
+    """Slanted 45-degree stripes; one extra period on the left so a one-period drift loops."""
     x0, y0, w, h = HAZARD_BOX
     shapes = []
-    for x in range(x0 - h - HAZARD_PERIOD, x0 + w + 1, HAZARD_PERIOD):
+    n = math.ceil((w + h + 2 * HAZARD_PERIOD) / HAZARD_PERIOD)
+    for i in range(n + 1):
+        x = round(x0 - h - HAZARD_PERIOD + i * HAZARD_PERIOD, 2)
         pts = [(x + h, y0), (x + h + HAZARD_STRIPE, y0), (x + HAZARD_STRIPE, y0 + h), (x, y0 + h)]
-        shapes.append('<path d="M' + " L".join(f"{px} {py}" for px, py in pts) + ' Z"/>')
+        shapes.append('<path d="M' + " L".join(f"{round(px, 2):g} {py:g}" for px, py in pts) + ' Z"/>')
     return "".join(shapes)
 
 
@@ -128,7 +132,7 @@ def render_banner(display: bytes, mono: bytes) -> str:
     style = (
         _font_css(display, display_text, mono, mono_text)
         + "@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}"
-        + "@keyframes drift{from{transform:translateX(0)}to{transform:translateX(16px)}}"
+        + f"@keyframes drift{{from{{transform:translateX(0)}}to{{transform:translateX({HAZARD_PERIOD:g}px)}}}}"
         + ".online{animation:pulse 2s ease-in-out infinite}"
         + ".hazard{animation:drift 2s linear infinite}"
         + "@media (prefers-reduced-motion: reduce){.online,.hazard{animation:none}}"
